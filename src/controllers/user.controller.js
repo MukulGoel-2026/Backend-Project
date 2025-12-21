@@ -6,7 +6,7 @@ import ApiResponse from "../utils/ApiResponse.js"
 
 const generateAccessAndRefreshTokens = async (userId) => {
     try {
-        const user = await user.findById(userId);
+        const user = await User.findById(userId);
         const refreshToken = user.generateRefreshToken()
         const accessToken = user.generateAccessToken()
         
@@ -92,7 +92,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
 })
 
-const loginUser = asyncHandler (async (req ,res) => {
+const loginUser = asyncHandler(async (req ,res) => {
     // request data -> body 
     // username orr email
     // find the user
@@ -100,10 +100,9 @@ const loginUser = asyncHandler (async (req ,res) => {
     // access and refresh token 
     // send cookie
 
+    const { username , email , password } = req.body
 
-    const {email ,username ,password} = req.body
-
-    if (!username || !email) {
+    if (!username && !email) {
         throw new ApiError(400 ,"username or email is required")
     }
 
@@ -146,31 +145,31 @@ const loginUser = asyncHandler (async (req ,res) => {
 
 })
 
-const logoutUser = asyncHandler (async (res ,req) => {
-    await User.findOneAndUpdate(
-        req.user._id ,
+const logoutUser = asyncHandler(async(req, res) => {
+    await User.findByIdAndUpdate(
+        req.user._id,
         {
-            $set: {
-                refreshToken: undefined,
+            $unset: {
+                refreshToken: 1 // this removes the field from document
             }
         },
         {
-            new: true,
-        },
+            new: true
+        }
     )
 
     const options = {
         httpOnly: true,
-        secure: true,
+        secure: true
     }
 
     return res
     .status(200)
-    .clearCookie("accessToken" , accessToken , options)
-    .clearCookie("refreshToken" , refreshToken , options)
-    .json(new ApiResponse(200 , "User logged out successfully" , {}))
-
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(new ApiResponse(200, {}, "User logged Out"))
 })
+
 
 export {
     registerUser,
